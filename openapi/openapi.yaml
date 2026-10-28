@@ -1,0 +1,179 @@
+openapi: 3.1.0
+info:
+  title: Swift TODO API
+  version: 1.0.0
+  description: VaporとPostgreSQLで実装したTODO APIのサンプル。
+servers:
+  - url: http://localhost:8080
+paths:
+  /hello-swift:
+    get:
+      operationId: helloSwift
+      summary: Swiftサーバーの疎通確認
+      responses:
+        "200":
+          description: 正常応答
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HelloResponse"
+              example:
+                message: Hello, Swift!
+  /todos:
+    get:
+      operationId: listTodos
+      summary: TODO一覧を取得
+      responses:
+        "200":
+          description: 作成日時の昇順で並んだTODO一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Todo"
+    post:
+      operationId: createTodo
+      summary: TODOを作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTodoRequest"
+            example:
+              title: Vaporを試す
+      responses:
+        "201":
+          description: 作成済みTODO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /todos/{todoID}:
+    parameters:
+      - $ref: "#/components/parameters/TodoID"
+    get:
+      operationId: getTodo
+      summary: TODOを1件取得
+      responses:
+        "200":
+          description: TODO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateTodo
+      summary: TODOを部分更新
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTodoRequest"
+            example:
+              isCompleted: true
+      responses:
+        "200":
+          description: 更新済みTODO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Todo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteTodo
+      summary: TODOを削除
+      responses:
+        "204":
+          description: 削除成功
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  parameters:
+    TodoID:
+      name: todoID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    HelloResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    Todo:
+      type: object
+      required: [id, title, isCompleted, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        isCompleted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateTodoRequest:
+      type: object
+      additionalProperties: false
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        isCompleted:
+          type: boolean
+          default: false
+    UpdateTodoRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        isCompleted:
+          type: boolean
+    Error:
+      type: object
+      required: [error, reason]
+      properties:
+        error:
+          type: boolean
+          const: true
+        reason:
+          type: string
+  responses:
+    BadRequest:
+      description: リクエストが不正
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: TODOが存在しない
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
